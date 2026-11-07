@@ -237,6 +237,7 @@ class ImprovedHandwrittenOCR:
         img1 = cv2.resize(self.image, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
         gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
         gray1 = cv2.GaussianBlur(gray1, (3, 3), 0)
+        cv2.imwrite("handwritten_meth1_gray1.png", gray1)
         thresh1 = cv2.adaptiveThreshold(
             gray1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
             cv2.THRESH_BINARY, 31, 11
@@ -789,6 +790,9 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--cli', action='store_true',
 	                    help='command line: do not prompt for options, given via CLI')
 
+    parser.add_argument('-d', '--folder', type = str, default=None,
+                        help ='the path to a folder with images')
+
     parser.add_argument('-v', '--verbose', type = int, default=None,
 	                    help='Verbosity level: 0=no output, 1=least,... default all')
 
@@ -812,17 +816,24 @@ if __name__ == "__main__":
     try:
         verbose = args.verbose
         app = OCRApp()
-        if args.cli:
-            result = app.run_cli(args.image,
-                        language=args.language, 
-                        mode=args.mode,
-                        fix_orient=args.orientationcheck,
-                        columns=args.cols,
-                        savecompares=args.savecompares
-            )
-            printer(result, lvl=2)
+        if args.folder == None:
+            imgpaths = {args.image}
         else:
-            app.run(imgpath=args.image)
+            files = os.listdir(args.folder)
+            imgpaths = (args.folder + file for file in files if file.endswith(('.jpg', '.png', 'jpeg')))
+
+        for img in imgpaths:
+            if args.cli:
+                result = app.run_cli(img,
+                            language=args.language, 
+                            mode=args.mode,
+                            fix_orient=args.orientationcheck,
+                            columns=args.cols,
+                            savecompares=args.savecompares
+                )
+                printer(result, lvl=2)
+            else:
+                app.run(imgpath=args.image)
     except KeyboardInterrupt:
         console.print("\n[yellow]Interrupted[/yellow]")
     except Exception as e:
